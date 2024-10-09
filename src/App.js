@@ -1,24 +1,50 @@
-import logo from './logo.svg';
-import './App.css';
+import axios from "axios";
+import { useEffect, useState } from "react";
+import { Alert, Button, Col, Container, Row } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 
 function App() {
+  const [username, setUsername] = useState('');
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+
+  useEffect(()=>{
+      axios.get('http://localhost:5000/auth', {withCredentials:true})
+      .then(res=>setUsername(res.data.username))
+      .catch(err=>{
+        if(err.message == "Network Error")
+          setError('Não foi possivel conectar ao servidor')
+        else if(err.response.data.message)
+          if(err.response.data.message == "Cookie de token não definido")
+            setError("Você não está logado")
+        else
+          setError(err.response.data.message)
+      })
+  },[username])
+
+  const handleLogout = ()=>{
+    axios.get('http://localhost:5000/auth/logout', {withCredentials:true})
+    setUsername('')
+  }
+
+  function NotLogged(){
+    return <Container style={{width: '380px'}}>
+      <Row><Col><Alert variant="danger">{error}</Alert></Col></Row>
+      <Row>
+        <Col><Button onClick={()=>navigate('/login')} className="w-100"> Login </Button></Col>
+        <Col><Button onClick={()=>navigate('/register')} className="w-100"> Registrar-se </Button></Col>
+      </Row>
+    </Container>
+  }
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Container className="min-vh-100 d-flex flex-column justify-content-center align-items-center">
+      {error?<NotLogged/>:<>
+      <h1>Bem-vindo {username}</h1>
+      <Button variant="danger" onClick={handleLogout}> Fazer Logout </Button>
+      </>}
+      
+    </Container>
   );
 }
 
